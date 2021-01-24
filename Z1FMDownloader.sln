@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z1FMDownloader.Core", "Z1FMDownloader.Core\Z1FMDownloader.Core.csproj", "{01845E54-CAA0-42D7-9EE7-0BAE00CA0B89}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z1FMDownloader.CLI", "Z1FMDownloader.CLI\Z1FMDownloader.CLI.csproj", "{733AC653-2709-41D7-BEDC-1BBC0C1C0A4E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{01845E54-CAA0-42D7-9EE7-0BAE00CA0B89}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01845E54-CAA0-42D7-9EE7-0BAE00CA0B89}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01845E54-CAA0-42D7-9EE7-0BAE00CA0B89}.Release|Any CPU.Build.0 = Release|Any CPU
+		{733AC653-2709-41D7-BEDC-1BBC0C1C0A4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{733AC653-2709-41D7-BEDC-1BBC0C1C0A4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{733AC653-2709-41D7-BEDC-1BBC0C1C0A4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{733AC653-2709-41D7-BEDC-1BBC0C1C0A4E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
