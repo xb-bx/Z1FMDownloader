@@ -1,12 +1,17 @@
-﻿using System;
+﻿using CliFx;
+using System;
+using System.Threading.Tasks;
 
 namespace Z1FMDownloader.CLI
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            return await new CliApplicationBuilder()
+                .AddCommandsFromThisAssembly()
+                .Build()
+                .RunAsync();
         }
     }
 }
