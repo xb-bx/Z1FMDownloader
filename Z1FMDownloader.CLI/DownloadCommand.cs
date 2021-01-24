@@ -27,21 +27,22 @@ namespace Z1FMDownloader.CLI
             {
                 Output = Environment.CurrentDirectory;
             } 
+            using Downloader downloader = new();
             Tracks.AsParallel()
                 .ForAll(
                     async track =>
                     {
                         var keywords = Uri.EscapeUriString(track);
-                        using Downloader downloader = new();
                         using var doc = await ctx.OpenAsync($"{baseUrl}{keywords}");
                         var id = doc.QuerySelector("#list-songs > .tracks-item > .tracks-description > a:nth-child(3)");
                         if (id is null)
                         {
                             console.Output.WriteLine($"Cant find track {track}");
                             return;
-                        } 
-                        var data = await downloader.Download(id.GetAttribute("href").Replace("/song/", null));
-                        await console.Output.WriteLineAsync($"Downloaded {track} with size {data.Length}");
+                        }
+                        var data = await downloader.Download(id.GetAttribute("href").Substring(6));
+                        var size = (((double)data.Length) / 1024 / 1024).ToString("F2");
+                        await console.Output.WriteLineAsync($"Downloaded {track} with size {size} MiB");
                         await File.WriteAllBytesAsync(Path.Combine(Output,$"{track}.mp3"), data);
                     }
                 );
