@@ -31,13 +31,11 @@ namespace Z1FMDownloader.CLI
             }
             string url = $"{baseUrl}{Uri.EscapeUriString(TrackName)}";
             var doc = await ctx.OpenAsync(url);
-            var names = doc.QuerySelectorAll("#list-songs > .tracks-item > div > a > .tracks-name-title").Select(x=>x.TextContent);
-            var artists = doc.QuerySelectorAll("#list-songs > .tracks-item > div > a > .tracks-name-artist").Select(x=>x.TextContent);
-            var ids = doc.QuerySelectorAll("#list-songs > .tracks-item > .tracks-description > a:nth-child(3)").Select(x=>x.GetAttribute("href").Replace("/song/", null));
-            console.Output.WriteLine($"{names.Count()} {artists.Count()} {ids.Count()}");
-            
+            var t = doc.QuerySelectorAll("#list-songs > .tracks-item");
+            var names = t.Select(x => x.GetAttribute("data-title"));
+            var artists = t.Select(x => x.GetAttribute("data-artist"));
+            var ids = t.Select(x => x.GetAttribute("data-id"));  
             var songs = names.Zip(artists).Zip(ids).Select(x => (x.First.First, x.First.Second, x.Second)).ToArray();
-
             for(int index = 0; index < songs.Length; index++)
             {
                 console.Output.WriteLine($"#{index}: {songs[index].Item2} - {songs[index].First} | id: {songs[index].Item3}");
