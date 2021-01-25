@@ -17,6 +17,8 @@ namespace Z1FMDownloader.CLI
         public IEnumerable<string> Tracks { get; set; }
         [CommandOption('o', Description = "Path to output directory")]
         public string Output { get; set; }
+        [CommandOption('p', Description = "Prefix for search queries")]
+        public string Prefix { get; set; }
 
         private IBrowsingContext ctx = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
         private string baseUrl = "https://m.z1.fm/mp3/search?keywords=";
@@ -28,25 +30,27 @@ namespace Z1FMDownloader.CLI
                 Output = Environment.CurrentDirectory;
             } 
             using Downloader downloader = new();
-            Tracks.AsParallel()
-                .ForAll(
-                    async track =>
+
+            Task.WaitAll(Tracks.Select(track => Task.Run(
+            (
+                async () =>
+                {
+                    
+                    var keywords = Uri.EscapeUriString($"{Prefix} {track}");
+                    using var doc = await ctx.OpenAsync($"{baseUrl}{keywords}");
+                    var id = doc.QuerySelector("#list-songs > .tracks-item > .tracks-description > a:nth-child(3)");
+                    if (id is null)
                     {
-                        var keywords = Uri.EscapeUriString(track);
-                        using var doc = await ctx.OpenAsync($"{baseUrl}{keywords}");
-                        var id = doc.QuerySelector("#list-songs > .tracks-item > .tracks-description > a:nth-child(3)");
-                        if (id is null)
-                        {
-                            console.Output.WriteLine($"Cant find track {track}");
-                            return;
-                        }
-                        var data = await downloader.Download(id.GetAttribute("href").Substring(6));
-                        var size = (((double)data.Length) / 1024 / 1024).ToString("F2");
-                        await console.Output.WriteLineAsync($"Downloaded {track} with size {size} MiB");
-                        await File.WriteAllBytesAsync(Path.Combine(Output,$"{track}.mp3"), data);
+                        console.Output.WriteLine($"Cant find track {track}");
+                        return;
                     }
-                );
-            console.Input.Read();
+                    var data = await downloader.Download(id.GetAttribute("href").Substring(6));
+                    var size = (((double)data.Length) / 1024 / 1024).ToString("F2");
+                    await console.Output.WriteLineAsync($"Downloaded {track} with size {size} MiB");
+                    await File.WriteAllBytesAsync(Path.Combine(Output, $"{track}.mp3"), data);
+                }
+            ))).ToArray());
+            console.Output.WriteLine("Completed");
         }
     }
 }
