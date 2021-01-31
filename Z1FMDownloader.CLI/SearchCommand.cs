@@ -1,5 +1,4 @@
-﻿using AngleSharp;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using System;
 using System.IO;
@@ -15,13 +14,11 @@ namespace Z1FMDownloader.CLI
         private static string baseUrl = "https://m.z1.fm/mp3/search?keywords=";
 
         [CommandParameter(0, Name = "track")]
-        public string TrackName { get; set; }
+        public string? TrackName { get; set; }
         [CommandOption('o', Description = "Path to output directory")]
-        public string Output { get; set; }
+        public string? Output { get; set; }
 
-
-        private IBrowsingContext ctx = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
-        
+        private IZ1FMService service = new Z1FMService();        
 
         public async ValueTask ExecuteAsync(IConsole console)
         {
@@ -29,23 +26,39 @@ namespace Z1FMDownloader.CLI
             {
                 Output = Environment.CurrentDirectory;
             }
-            string url = $"{baseUrl}{Uri.EscapeUriString(TrackName)}";
-            var doc = await ctx.OpenAsync(url);
-            var t = doc.QuerySelectorAll("#list-songs > .tracks-item");
-            var names = t.Select(x => x.GetAttribute("data-title"));
-            var artists = t.Select(x => x.GetAttribute("data-artist"));
-            var ids = t.Select(x => x.GetAttribute("data-id"));  
-            var songs = names.Zip(artists).Zip(ids).Select(x => (x.First.First, x.First.Second, x.Second)).ToArray();
-            for(int index = 0; index < songs.Length; index++)
+            int skip = 0;
+            var songs = service.Search(TrackName!);
+            for(int i = 0;;)
             {
-                console.Output.WriteLine($"#{index}: {songs[index].Item2} - {songs[index].First} | id: {songs[index].Item3}");
-            }
-            console.Output.WriteLine("Input song number: ");
-            if(int.TryParse(console.Input.ReadLine(), out int i))
-            {
-                using Downloader downloader = new();
-                var data = await downloader.Download(songs[i].Item3);
-                await File.WriteAllBytesAsync(Path.Combine(Output, $"{songs[i].First}.mp3"), data);
+                await foreach(Song song in songs.Skip(skip).Take(10))
+                {
+                    console.Output.WriteLine($"#{i++}: {song.Title}");
+                }
+                console.Output.WriteLine("Input song number or press enter to load more:");
+                var input = console.Input.ReadLine();
+                if(string.IsNullOrWhiteSpace(input)) {
+                    skip += 10;
+                    continue;
+                }
+                else
+                {
+                    if(int.TryParse(input, out int index))
+                    {
+                        console.Output.WriteLine("Downloading...");
+                        var song =await songs.ElementAtAsync(index);
+                        var songData = await service.Download(song);
+                        await File.WriteAllBytesAsync(Path.Combine(Output, $"{TrackName}.mp3"), songData);
+                        var size = ((double)songData.Length) / 1024.0 / 1024.0;
+                        console.Output.WriteLine($"Downloaded {TrackName}.mp3 with size {size.ToString("F2")} MiB");
+                        break;
+                    }
+                    else
+                    {
+                        console.Output.WriteLine("Invalid number");
+                        break;
+                    }
+                }
+
             }
         }
     }

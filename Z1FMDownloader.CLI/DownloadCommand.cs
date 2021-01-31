@@ -1,9 +1,8 @@
-﻿using AngleSharp;
-using CliFx;
+﻿using CliFx;
 using CliFx.Attributes;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.IO; 
 using System.Linq;
 using System.Threading.Tasks;
 using Z1FMDownloader.Core;
@@ -16,36 +15,32 @@ namespace Z1FMDownloader.CLI
         [CommandParameter(0, Description = "Tracks to download", Name = "tracks")]
         public IEnumerable<string> Tracks { get; set; }
         [CommandOption('o', Description = "Path to output directory")]
-        public string Output { get; set; }
+        public string? Output { get; set; }
         [CommandOption('p', Description = "Prefix for search queries")]
-        public string Prefix { get; set; }
+        public string? Prefix { get; set; }
 
-        private IBrowsingContext ctx = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
-        private string baseUrl = "https://m.z1.fm/mp3/search?keywords=";
+        private IZ1FMService service = new Z1FMService();
+
 
 
         private async Task DownloadTrack(string track)
-        {
-            using Downloader downloader = new Downloader();
-
-            var keywords = Uri.EscapeUriString($"{Prefix} {track}");
-            using var doc = await ctx.OpenAsync($"{baseUrl}{keywords}");
-            var t = doc.QuerySelector("#list-songs > .tracks-item");
-            var id = t?.GetAttribute("data-id");
-            var title = t?.GetAttribute("data-title"); 
-            if (id is null)
+        {  
+            var song = await service.Search($"{Prefix} {track}").FirstOrDefaultAsync();
+            if(song is not null) 
             {
-                await Console.Out.WriteLineAsync($"Cant find track {track}");
-                return;
+                var songData = await service.Download(song);
+                var size = ((double)songData.Length) / 1024.0 / 1024.0;
+                await File.WriteAllBytesAsync(Path.Combine(Output!,song.Title), songData);
+                await Console.Out.WriteLineAsync($"Downloaded {song.Title} with size {size.ToString("F2")} MiB");
             }
-            var data = await downloader.Download(id);
-            var size = (((double)data.Length) / 1024 / 1024).ToString("F2");
-            await File.WriteAllBytesAsync(Path.Combine(Output, $"{title}.mp3"), data);
-            await Console.Out.WriteLineAsync($"Downloaded {title} with size {size} MiB");
+            else
+            {
+                await Console.Out.WriteLineAsync($"Failed to find {track}");
+            }
         }
 
 
-        public async ValueTask ExecuteAsync(IConsole console)
+        public ValueTask ExecuteAsync(IConsole console)
         {
             if (string.IsNullOrWhiteSpace(Output))
             {
@@ -54,10 +49,11 @@ namespace Z1FMDownloader.CLI
             Task.WaitAll(Tracks.Select(
                 track => Task.Run
                 (
-                    () => DownloadTrack(track)
+                     () => DownloadTrack(track)
                 )
             ).ToArray());
             console.Output.WriteLine("Completed");
+            return default;
         }
     }
 }
