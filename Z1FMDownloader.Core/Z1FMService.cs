@@ -18,7 +18,7 @@ namespace Z1FMDownloader.Core
         {
             client.DefaultRequestHeaders.Add("User-Agent", RandomUa.RandomUserAgent);
             client.DefaultRequestHeaders.Add("cookie", "__cfduid=dbee0fdb0d09385bc2e4210f8a074f9801611478510; zvAuth=1; zvLang=0; _zvMobile_=0; PHPSESSID=kiiea1hbs9dlnjlma1fifot9q2; YII_CSRF_TOKEN=41f96c1d85f57539da298e6924ae382f4b3b1c5e; _zvBoobs_=%2F%2F_-%29");
-            client.BaseAddress = new("https://z1.fm");
+            client.BaseAddress = new("https://z2.fm");
         }
 
 
